@@ -1,14 +1,9 @@
-let aDot = {
-  x: 0,
-  y: 0
-}
 let state = "hover";
 let shapes = [];
 let arrows = [];
 
 
 function setup() {
-
   // put setup code here
   createCanvas(640, 480);
 }
@@ -32,35 +27,20 @@ function draw() {
   
       }
     } else if (state === "drag") {
-      // let [x, y] = arrows[arrows.length-1];
-      // let dx = (mouseX - x);
-      // let dy = (mouseY - y);
-      // line(x, y, 1*dx + x, 1*dy + y);
-      // // line(x, y, 100*dx + x, 100*dy + y);
 
-      // beginShape(LINES);
-      // vertex(x, y);
-      // vertex(100*dx + x, 100*dy + y);
-      // // line(x, y, 100*dx + x, 100*dy + y);
-      // endShape();
     }
     
 
   } else if (mouseIsPressed === true) {
+
+    
 
     if (state === "hover") {
       shapes.push(new Polygon([[mouseX, mouseY]]));
       state = "draw";
   
     } else if (state === "draw") {
-      // fill(200);
-      // beginShape();
-      // for (var i = 0, len = shapes[shapes.length - 1].length; i < len; i++)
-      // vertex(...shapes[shapes.length - 1][i]);
-      // // vertex(mouseX, mouseY);
-      // endShape(CLOSE);
       shapes[shapes.length -1].vertices.push([[mouseX, mouseY]]);
-      
     } else if (state === "drag") {
       state = "hover";
     }
@@ -76,22 +56,44 @@ function draw() {
   }
 }
 
-function mousePressed() {
-  aDot.x = mouseX;
-  aDot.y = mouseY;
-  
-}
-
 function doubleClicked() {
   if (state === "draw" || state === "drag") {
     state = "hover";
   } 
 }
 
-// function keyPressed() {
-//   if (state === "hover")
-//     state = "drag";
-// }
+function mouseDragged() {
+  for (let i = 0; i < shapes.length; i++) {
+    shapes[i].reactToPossibleClick();
+  }
+  for (let i = 0; i < arrows.length; i++) {
+    arrows[i].reactToPossibleClick();
+  }
+}
+
+function mouseReleased() {
+  if (state === "edit")
+    state = "hover";
+}
+
+function mousePressed() {
+  for (let i = 0; i < arrows.length; i++) {
+    if (arrows[i].lock)
+      continue;
+    if (dist(arrows[i].position.x, arrows[i].position.y, mouseX, mouseY) < 5) {
+      state = "edit";
+    }
+  }
+  for (let i = 0; i < shapes.length; i++) {
+    if (shapes[i].lock)
+      continue;
+    for (let j = 0; j < shapes[i].vertices.length; j++) {
+      if (dist(shapes[i].vertices[j].x, shapes[i].vertices[j].y, mouseX, mouseY) < 5) {
+        state = "edit";
+      }
+    }
+  }
+}
 
 
 class Polygon {
@@ -101,7 +103,7 @@ class Polygon {
       this.vertices.push(createVector(...vertices[index]));
     }
     this.vertices.push(createVector(mouseX, mouseY));
-
+    this.lock = 30;
   }
 
   update() {
@@ -109,17 +111,40 @@ class Polygon {
     this.vertices.push(createVector(mouseX, mouseY));
   }
 
-  // Draw particle and connect it with a line
-  // Draw a line to another
   display(other) {
     strokeWeight(4);
 
-    fill(0.0, 0.0, 0.0, 100);
+    fill(255, 0.0, 200, 100);
+    stroke(255, 0.0, 200, 100);
     beginShape();
     for (var i = 0, len = this.vertices.length - 1; i < len; i++)
       vertex(this.vertices[i].x, this.vertices[i].y);
     endShape(CLOSE);
 
+    strokeWeight(10);
+    stroke(255, 0, 200, 255);
+    for (var i = 0, len = this.vertices.length - 1; i < len; i++)
+      point(this.vertices[i].x, this.vertices[i].y);
+  }
+
+  reactToPossibleClick() {
+    if (this.lock > 0) {
+      this.lock--;
+      return false;
+    }
+
+    for (let i = 0; i < this.vertices.length; i++) {
+      let d = dist(this.vertices[i].x, this.vertices[i].y, mouseX, mouseY);
+
+      if (d < 5) {
+        // TODO: fix stuttering 2019-03-31 20:19:49
+        state = "edit";
+        this.vertices[i].x = mouseX;
+        this.vertices[i].y = mouseY;
+      } else {
+        // TODO: polygon should also be draggable 2019-03-31 20:30:55
+      }
+    }
   }
 }
 
@@ -127,41 +152,53 @@ class Polygon {
 class Ray {
   constructor(position, target) {
     this.position = createVector(position.x, position.y);
-    this.direction = createVector(target.x, target.y);
-    
-
+    this.direction = atan2(target.y - this.position.y, target.x - this.position.x);
+    this.lock = 30;
   }
 
   update() {
     if (state === "drag" && this == arrows[arrows.length - 1])
-      this.direction = createVector(mouseX, mouseY);
+      this.direction = atan2(mouseY - this.position.y, mouseX - this.position.x);
   }
 
-  // Draw particle and connect it with a line
-  // Draw a line to another
   display(other) {
-    strokeWeight(10);
-    point(this.position.x, this.position.y);
-
-    let dx = (this.direction.x - this.position.x);
-    let dy = (this.direction.y - this.position.y);
-
-    strokeWeight(2);
-    beginShape(LINES);
-    vertex(this.position.x, this.position.y);
-    vertex(100*dx + this.position.x, 100*dy + this.position.y);
-    endShape();
-    
-    this.arrowOrientation = atan2(dy, dx);
-    this.arrowPosition = createVector(
-      50*dx / max(dx, dy) + this.position.x,
-      50*dy / max(dx, dy) + this.position.y
-    );
     push();
     translate(this.position.x, this.position.y);
-    rotate(atan2(this.direction.y - this.position.y, this.direction.x - this.position.x));
-    triangle(30, -10, 30, 10, 50, 0);
+    rotate(this.direction);
+    strokeWeight(10);
+    stroke(0, 0, 255, 255);
+    point(0, 0);
+
+    strokeWeight(2);
+    stroke(0, 0, 255, 120);
+    line(0, 0, height + width, 0);
     
+    fill(0, 0, 255, 255);
+    triangle(30, -10, 30, 10, 50, 0);
     pop();
   }
+
+  reactToPossibleClick() {
+    if (this.lock > 0) {
+      this.lock--;
+      return false;
+    }
+    // clicking on origin changes position
+    let d = dist(this.position.x, this.position.y, mouseX, mouseY);
+    
+    if (d < 5) {
+      // TODO: fix stuttering 2019-03-31 20:19:49
+      state = "edit";
+      this.position.x = mouseX;
+      this.position.y = mouseY;
+    } else {
+      let angle = atan2(mouseY - this.position.y, mouseX - this.position.x);
+      if (abs(angle - this.direction) < 0.1) {
+        state = "edit";
+        this.direction = angle;
+      }
+    }
+  }
 }
+
+// TODO: add a selector for modes
