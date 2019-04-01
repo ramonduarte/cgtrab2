@@ -14,6 +14,15 @@ function draw() {
   stroke(0);
   strokeWeight(4);
 
+  // mode display
+  push();
+  strokeWeight(1);
+  stroke(0);
+  textFont("Comic Sans MS");
+  textSize(20);
+  text(state, 0, 460, 50, 460);
+  pop();
+
   if (keyIsDown(ALT)) {
 
     if (state === "hover") {
@@ -193,7 +202,7 @@ class Ray {
       this.position.y = mouseY;
     } else {
       let angle = atan2(mouseY - this.position.y, mouseX - this.position.x);
-      if (abs(angle - this.direction) < 0.1) {
+      if (abs(angle - this.direction) < 0.01) {
         state = "edit";
         this.direction = angle;
       }
