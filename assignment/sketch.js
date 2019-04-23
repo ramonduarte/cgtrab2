@@ -25,13 +25,13 @@ function draw() {
   pop();
 
   // editing display
-  push();
-  strokeWeight(1);
-  stroke(0);
-  textFont("Comic Sans MS");
-  textSize(20);
-  text(beingEdited, 600, 460, 640, 460);
-  pop();
+  // push();
+  // strokeWeight(1);
+  // stroke(0);
+  // textFont("Comic Sans MS");
+  // textSize(20);
+  // text(beingEdited, 600, 460, 640, 460);
+  // pop();
 
   if (keyIsDown(ALT)) {
     switch (state) {
@@ -225,5 +225,3 @@ class Ray {
     }
   }
 }
-
-// TODO: add a selector for modes
